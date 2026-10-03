@@ -1,0 +1,27 @@
+{
+  "lab": {
+    "mode": "example",
+    "expected_org_id": "00D000000000001AAA",
+    "salesforce_host": "example.my.salesforce.com",
+    "runtime_user_id": "005000000000003AAA",
+    "api_version": "v67.0",
+    "records": {
+      "A": "006000000000001AAA",
+      "B": "006000000000002AAA"
+    },
+    "users": {
+      "CustomerA": {
+        "salesforce_user_id": "005000000000001AAA",
+        "intended_delegation_records": [
+          "A"
+        ]
+      },
+      "CustomerB": {
+        "salesforce_user_id": "005000000000002AAA",
+        "intended_delegation_records": [
+          "B"
+        ]
+      }
+    }
+  }
+}

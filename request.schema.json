@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lab authorization_details item (RFC 9396 inspired, not OAuth/RAR compliance)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "record", "action", "fields", "task", "audience"],
+  "properties": {
+    "type": {"const": "salesforce_record"},
+    "record": {"enum": ["A", "B"]},
+    "action": {"const": "read"},
+    "fields": {"type": "array", "minItems": 1, "maxItems": 6, "uniqueItems": true, "items": {"enum": ["Id", "Name", "StageName", "CloseDate", "Amount", "NextStep"]}},
+    "task": {"const": "opportunity-summary"},
+    "audience": {"const": "salesforce-read"}
+  }
+}

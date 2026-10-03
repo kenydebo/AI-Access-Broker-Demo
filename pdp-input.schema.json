@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Broker-owned PDP input; never accept agent or scope from the caller",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent",
+    "allowed_record",
+    "allowed_task",
+    "request"
+  ],
+  "properties": {
+    "agent": {
+      "enum": [
+        "AgentA",
+        "AgentB"
+      ]
+    },
+    "allowed_record": {
+      "enum": [
+        "A",
+        "B"
+      ]
+    },
+    "allowed_task": {
+      "const": "opportunity-summary"
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record",
+        "action",
+        "fields",
+        "task",
+        "audience"
+      ],
+      "properties": {
+        "record": {
+          "enum": [
+            "A",
+            "B"
+          ]
+        },
+        "action": {
+          "const": "read"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "Id",
+              "Name",
+              "StageName",
+              "CloseDate",
+              "Amount",
+              "NextStep"
+            ]
+          }
+        },
+        "task": {
+          "const": "opportunity-summary"
+        },
+        "audience": {
+          "const": "salesforce-read"
+        }
+      }
+    },
+    "human_session_required": {
+      "type": "boolean"
+    },
+    "runtime_executor_required": {
+      "type": "boolean"
+    },
+    "human": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "org_id",
+        "user_id",
+        "session_id",
+        "allowed_record",
+        "allowed_task",
+        "active"
+      ],
+      "properties": {
+        "org_id": {
+          "type": "string",
+          "pattern": "^00D[A-Za-z0-9]{15}$"
+        },
+        "user_id": {
+          "type": "string",
+          "pattern": "^005[A-Za-z0-9]{15}$"
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "allowed_record": {
+          "enum": [
+            "A",
+            "B"
+          ]
+        },
+        "allowed_task": {
+          "const": "opportunity-summary"
+        },
+        "active": {
+          "const": true
+        }
+      }
+    },
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "org_id",
+        "user_id",
+        "validated"
+      ],
+      "properties": {
+        "org_id": {
+          "type": "string",
+          "pattern": "^00D[A-Za-z0-9]{15}$"
+        },
+        "user_id": {
+          "type": "string",
+          "pattern": "^005[A-Za-z0-9]{15}$"
+        },
+        "validated": {
+          "const": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "fix-932e4ff-in-1.21.1": {
+    "url": "https://api.github.com/repos/open-policy-agent/opa/compare/932e4ffc37a590ace79e9b75ca4340288c220239...v1.21.1?per_page=1",
+    "result": {
+      "status": "ahead",
+      "ahead_by": 3260,
+      "behind_by": 0,
+      "total_commits": 3260,
+      "base_commit": "932e4ffc37a590ace79e9b75ca4340288c220239",
+      "merge_base_commit": "932e4ffc37a590ace79e9b75ca4340288c220239"
+    }
+  },
+  "fix-2bd8eda-in-1.21.1": {
+    "url": "https://api.github.com/repos/open-policy-agent/opa/compare/2bd8edab9e10e2dc9cf76ae8335ced0c224f3055...v1.21.1?per_page=1",
+    "result": {
+      "status": "diverged",
+      "ahead_by": 3232,
+      "behind_by": 4,
+      "total_commits": 3232,
+      "base_commit": "2bd8edab9e10e2dc9cf76ae8335ced0c224f3055",
+      "merge_base_commit": "ad4f4f130025f8fd57978b94bee03ae247e76102"
+    }
+  },
+  "release-0.37.2": {
+    "url": "https://api.github.com/repos/open-policy-agent/opa/releases/tags/v0.37.2",
+    "result": {
+      "body": "This is a bugfix release addressing two bugs:\r\n\r\n1. A regression introduced in the formatter fix for CVE-2022-23628.\r\n2. Support indices for appending to an array, conforming to JSON Patch (RFC6902)\r\n   for patch bundles.\r\n\r\n### Miscellaneous\r\n\r\n- format: generated vars may have a proper location\r\n- storage: Support index for array appends",
+      "tag_name": "v0.37.2"
+    }
+  },
+  "osv-ghsa": {
+    "url": "https://api.osv.dev/v1/vulns/GHSA-hcw3-j74m-qc58",
+    "result": {
+      "id": "GHSA-hcw3-j74m-qc58",
+      "aliases": [
+        "CVE-2022-23628",
+        "GO-2022-0316"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/open-policy-agent/opa",
+            "ecosystem": "Go",
+            "purl": "pkg:golang/github.com/open-policy-agent/opa"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0.33.1"
+                },
+                {
+                  "fixed": "0.37.2"
+                }
+              ]
+            }
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2022/02/GHSA-hcw3-j74m-qc58/GHSA-hcw3-j74m-qc58.json"
+          }
+        }
+      ],
+      "modified": "2024-05-20T20:41:41Z"
+    }
+  },
+  "osv-cve": {
+    "url": "https://api.osv.dev/v1/vulns/CVE-2022-23628",
+    "result": {
+      "id": "CVE-2022-23628",
+      "aliases": [
+        "GHSA-hcw3-j74m-qc58",
+        "GO-2022-0316"
+      ],
+      "affected": [
+        {
+          "ranges": [
+            {
+              "type": "GIT",
+              "repo": "https://github.com/open-policy-agent/opa",
+              "events": [
+                {
+                  "introduced": "64359aebdea5bfc4c6644e0e760a8d13aaa3ebba"
+                },
+                {
+                  "fixed": "ad4f4f130025f8fd57978b94bee03ae247e76102"
+                },
+                {
+                  "fixed": "932e4ffc37a590ace79e9b75ca4340288c220239"
+                },
+                {
+                  "fixed": "bfd984ddf93ef2c4963a08d4fdadae0bcf1a3717"
+                }
+              ],
+              "database_specific": {
+                "extracted_events": [
+                  {
+                    "introduced": "0.33.1"
+                  },
+                  {
+                    "fixed": "0.37.0"
+                  }
+                ],
+                "source": [
+                  "CPE_RANGE",
+                  "REFERENCES"
+                ],
+                "cpe": "cpe:2.3:a:openpolicyagent:open_policy_agent:*:*:*:*:*:*:*:*"
+              }
+            }
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/cve-osv-conversion/osv-output/CVE-2022-23628.json"
+          }
+        }
+      ],
+      "modified": "2026-08-12T03:51:43.190007491Z"
+    }
+  }
+}
