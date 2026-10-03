@@ -110,3 +110,7 @@ Read allowlist: `Id`, `Name`, `StageName`, `CloseDate`, `Amount`, `NextStep`. Th
 See [verification evidence](docs/VERIFICATION.md), [threat model and limitations](docs/THREAT_MODEL.md), [dependencies](docs/DEPENDENCIES.md) and [release preparation](docs/RELEASE.md). No software/model installation or download happens during these commands. Missing OPA/SDK/model fails or skips dependency-specific tests; `scripts/check.py` refuses missing OPA/SDK rather than claiming integration passed.
 
 [Official Ollama chat API](https://docs.ollama.com/api/chat), [OPA policy language](https://www.openpolicyagent.org/docs/policy-language), [official MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk).
+
+## Hosted synthetic demo
+
+A separate bounded Render entrypoint supports the synthetic hosted demo. It uses scripted fixed scenarios with real broker and OPA decisions and synthetic data. It runs no model, MCP transport or Salesforce connection. See [Render preparation](docs/RENDER_DEPLOYMENT.md) for review gates, exact dependency pins and verification limits.

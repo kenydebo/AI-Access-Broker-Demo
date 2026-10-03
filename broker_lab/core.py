@@ -63,7 +63,10 @@ def find_opa():
     return shutil.which('opa')
 
 class OPAPolicy:
-    def __init__(self, policy_path=None, executable=None, query='data.broker.allow', data_path=None):
+    def __init__(self, policy_path=None, executable=None, query='data.broker.allow', data_path=None, timeout=3):
+        if not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or not 0 < timeout <= 10:
+            raise ValueError('OPA timeout must be >0 and <=10 seconds')
+        self.timeout = timeout
         self.path = str(policy_path or Path(__file__).resolve().parent.parent / 'policy' / 'broker.rego')
         self.executable = executable or find_opa() or 'opa'
         self.query = query
@@ -72,7 +75,7 @@ class OPAPolicy:
         try:
             result=subprocess.run([self.executable,'eval','--format=json','--data',self.path,
                 '--data',self.data_path,'--stdin-input','data.broker.decision'],
-                input=json.dumps(attributes),text=True,capture_output=True,timeout=3,check=True)
+                input=json.dumps(attributes),text=True,capture_output=True,timeout=self.timeout,check=True)
             value=json.loads(result.stdout)['result'][0]['expressions'][0]['value']
             if not isinstance(value,dict) or set(value)!={'allow','reasons'} or type(value['allow']) is not bool or not isinstance(value['reasons'],list) or any(not isinstance(r,str) or len(r)>100 for r in value['reasons']):
                 raise ValueError('invalid decision')
@@ -84,7 +87,7 @@ class OPAPolicy:
         try:
             result = subprocess.run([self.executable,'eval','--format=json','--data',self.path,
                 '--data',self.data_path,'--stdin-input',self.query],input=json.dumps(attributes),text=True,
-                capture_output=True,timeout=3,check=True)
+                capture_output=True,timeout=self.timeout,check=True)
             parsed = json.loads(result.stdout)
             expressions = parsed['result']
             return len(expressions) == 1 and len(expressions[0]['expressions']) == 1 and expressions[0]['expressions'][0]['value'] is True

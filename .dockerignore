@@ -1,0 +1,19 @@
+# Default exclude. Only synthetic runtime source enters the build context.
+**
+!Dockerfile
+!.dockerignore
+!broker_lab/
+broker_lab/**
+!broker_lab/__init__.py
+!broker_lab/core.py
+!broker_lab/configuration.py
+!broker_lab/hosted_demo.py
+!policy/
+policy/**
+!policy/broker.rego
+!examples/
+examples/**
+!examples/lab.example.json
+!web/
+web/**
+!web/hosted.html

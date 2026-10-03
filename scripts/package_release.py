@@ -7,7 +7,7 @@ import tarfile
 
 ROOT=Path(__file__).resolve().parent.parent
 DIRECTORIES=('broker_lab','tests','policy','examples','web','docs','scripts')
-FILES=('README.md','.gitignore','request.schema.json','pdp-input.schema.json','requirements.review.txt','dependency-advisory-review.json','opa-advisory-resolution.json')
+FILES=('README.md','.gitignore','Dockerfile','.dockerignore','request.schema.json','pdp-input.schema.json','requirements.review.txt','dependency-advisory-review.json','opa-advisory-resolution.json')
 files=[ROOT/p for p in FILES]
 for directory in DIRECTORIES:
     files.extend(p for p in (ROOT/directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix not in ('.pyc','.pyo') and p.name!='.DS_Store')
