@@ -32,9 +32,42 @@ details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summa
 .controls{display:grid;grid-template-columns:1fr 1fr;gap:24px}.controls p{font-size:14px}.controls label{display:block}.controls button{width:100%}
 .outcome{background:var(--canvas);border-left:4px solid var(--burgundy);padding:18px;margin-top:24px}.outcome h3{margin:0 0 8px;font-size:22px}.outcome p{margin:0}.data-summary{font-weight:600;margin-top:12px}
 @media(max-width:700px){.steps{grid-template-columns:1fr}.steps li{display:grid;grid-template-columns:130px 1fr;gap:12px}.steps span{margin:0}.controls{grid-template-columns:1fr;gap:12px}.lead{font-size:17px}}
+
+.flow{margin:24px 0 32px;padding:clamp(16px,3vw,24px);background:var(--white);border:1px solid var(--muted);border-radius:12px}
+.flow figcaption{font-size:20px;font-weight:700;color:var(--burgundy);margin-bottom:16px}
+.flow-main,.flow-result{display:grid;list-style:none;padding:0;margin:0;gap:22px}
+.flow-main{grid-template-columns:repeat(4,minmax(0,1fr))}.flow-result{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.flow-main li,.flow-result li{position:relative;margin:0;background:var(--canvas);border:1px solid var(--muted);border-radius:8px;padding:12px;line-height:1.4}
+.flow strong{display:block;color:var(--black);font-size:15px}.flow small{display:block;color:var(--charcoal);font-size:13px;margin-top:5px}
+.flow-arrow{position:absolute;right:-19px;top:50%;transform:translateY(-50%);color:var(--burgundy);font-weight:700}
+.flow-decision{text-align:center;margin:16px 0;color:var(--burgundy);font-size:14px;font-weight:600}
+.flow-branches{display:grid;grid-template-columns:3fr 1fr;gap:18px}.flow-branches h3{font-size:15px;margin:0 0 10px;color:var(--burgundy)}
+.flow-blocked{background:var(--canvas);border:1px solid var(--burgundy);border-radius:8px;padding:12px;line-height:1.4}
+.flow-note{font-size:13px;margin:16px 0 0;color:var(--muted)}
+@media(max-width:700px){.flow-main,.flow-result,.flow-branches{grid-template-columns:1fr}.flow-main,.flow-result{gap:24px}.flow-arrow{right:auto;left:50%;top:auto;bottom:-24px;transform:translateX(-50%) rotate(90deg)}.flow-decision{margin:20px 0}.flow-branches{gap:24px}.flow strong{font-size:16px}}
 </style><main>
 <p class="tag">Blaecwood · AI access broker lab</p>
 <h1>A request is not permission.</h1>
+<figure class="flow" aria-labelledby="flow-title">
+<figcaption id="flow-title">How access is enforced in this demo</figcaption>
+<ol class="flow-main" aria-label="Request path">
+<li><strong>Temporary session</strong><small>Customer A or B, with its own scope</small><span class="flow-arrow" aria-hidden="true">→</span></li>
+<li><strong>Gemini request</strong><small>Proposes one specific read</small><span class="flow-arrow" aria-hidden="true">→</span></li>
+<li><strong>Broker validation</strong><small>Checks the session token and requested scope</small><span class="flow-arrow" aria-hidden="true">→</span></li>
+<li><strong>OPA / Rego</strong><small>Decides whether access is permitted</small></li>
+</ol>
+<p class="flow-decision"><span aria-hidden="true">↓ </span>Policy decision</p>
+<div class="flow-branches">
+<div><h3>Allowed</h3><ol class="flow-result" aria-label="Allowed read path">
+<li><strong>Action grant</strong><small>Short-lived and single-use</small><span class="flow-arrow" aria-hidden="true">→</span></li>
+<li><strong>Broker recheck</strong><small>Policy checked again; grant consumed</small><span class="flow-arrow" aria-hidden="true">→</span></li>
+<li><strong>Synthetic read</strong><small>Only permitted data returned</small></li>
+</ol></div>
+<div><h3>Denied</h3><div class="flow-blocked"><strong>No data returned</strong><small>The read does not execute.</small></div></div>
+</div>
+<p class="flow-note">Any denial at issuance or redemption prevents the read. Session tokens and action grants stay server-side; credentials and grants are never placed in model prompts.</p>
+</figure>
+
 <p class="lead">Every agent request should be tied to the user who started it. The broker validates the session token, checks that user’s permitted scope against policy, and issues short-lived permission for the specific action. The agent cannot widen access by claiming another identity or scope.</p>
 <p class="note">A/B are temporary demo identities. Records are synthetic. No real-person authentication or enterprise-system connection is used.</p>
 <p><a href="https://github.com/kenydebo/AI-Access-Broker-Demo" target="_blank" rel="noopener noreferrer">View source on GitHub</a></p>
