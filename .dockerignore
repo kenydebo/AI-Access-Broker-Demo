@@ -8,6 +8,8 @@ broker_lab/**
 !broker_lab/core.py
 !broker_lab/configuration.py
 !broker_lab/hosted_demo.py
+!broker_lab/gemini_agent.py
+!broker_lab/gemini_runtime.py
 !policy/
 policy/**
 !policy/broker.rego
@@ -17,3 +19,4 @@ examples/**
 !web/
 web/**
 !web/hosted.html
+!web/gemini_controls.html

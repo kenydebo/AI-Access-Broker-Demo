@@ -3,10 +3,10 @@ FROM openpolicyagent/opa:1.21.1-static@sha256:4675ab04ad1627f74741d2d9c5142698c7
 FROM python:3.13-slim-bookworm@sha256:5024f48ba9441d4b13a95d3945abc6365538e3a31109833367a1923523c6efed
 COPY --from=opa /opa /usr/local/bin/opa
 WORKDIR /app
-COPY broker_lab/__init__.py broker_lab/core.py broker_lab/configuration.py broker_lab/hosted_demo.py /app/broker_lab/
+COPY broker_lab/__init__.py broker_lab/core.py broker_lab/configuration.py broker_lab/hosted_demo.py broker_lab/gemini_agent.py broker_lab/gemini_runtime.py /app/broker_lab/
 COPY policy/broker.rego /app/policy/broker.rego
 COPY examples/lab.example.json /app/examples/lab.example.json
-COPY web/hosted.html /app/web/hosted.html
+COPY web/hosted.html web/gemini_controls.html /app/web/
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=10000
 RUN opa check --strict /app/policy
 USER 10001:10001

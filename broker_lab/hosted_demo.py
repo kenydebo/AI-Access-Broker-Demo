@@ -1,4 +1,4 @@
-"""Bounded synthetic web demo. No model, MCP transport, live login or Salesforce."""
+"""Public scripted synthetic demo; optional private loopback model adapter. No live Salesforce."""
 import hmac
 from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -99,23 +99,56 @@ class Sessions:
                 return None, None
             key = secrets.token_urlsafe(32)
             session = {'csrf': secrets.token_urlsafe(32), 'expires': self.clock()+self.ttl,
-                       'runs': [], 'busy': False}
+                       'runs': [], 'busy': False, 'model_subject': secrets.token_urlsafe(32), 'model_runs': [], 'model_total': 0, 'demo_context': None}
             self.items[key] = session
             self.created.append(self.clock())
             return key, session
 
-    def begin(self, cookie, csrf):
+    def replace_demo(self, token, session, customer):
+        if customer not in ('A', 'B'):
+            raise ValueError('Unknown demo customer')
+        with self.lock:
+            if self.items.get(token) is not session or session['expires'] <= self.clock():
+                raise Denied('Demo token expired or unknown')
+            key = secrets.token_urlsafe(32)
+            replacement = {**session, 'csrf': secrets.token_urlsafe(32), 'busy': False,
+                           'model_subject': secrets.token_urlsafe(32),
+                           'demo_context': {'id': secrets.token_urlsafe(32), 'expires': min(self.clock()+300, session['expires']), 'scope': customer}}
+            del self.items[token]  # Old browser token/identity is invalid immediately.
+            self.items[key] = replacement
+            return key, {'principal': 'Temporary DemoCustomer'+customer, 'scope': customer,
+                         'task': 'opportunity-summary', 'expires_in': max(0, int(replacement['demo_context']['expires']-self.clock())),
+                         'csrf': replacement['csrf'], 'real_human_authentication': False,
+                         'events': [{'stage': 'demo_session', 'source': 'server-issued temporary principal', 'scope': customer, 'real_human_authentication': False}]}
+
+    def resolve_demo(self, token):
+        self.cleanup()
+        with self.lock:
+            session = self.items.get(token)
+            if session is None or session['demo_context'] is None or session['demo_context']['expires'] <= self.clock():
+                raise Denied('Demo token expired or unknown')
+            return dict(session['demo_context'])
+
+    def begin(self, cookie, csrf, model=False, demo_required=False):
         self.cleanup()
         with self.lock:
             session = self.items.get(cookie)
             if session is None or not hmac.compare_digest(session['csrf'], csrf):
                 return 403, None
             now = self.clock()
+            if demo_required and (session['demo_context'] is None or session['demo_context']['expires'] <= now or session['demo_context']['scope'] not in ('A', 'B')):
+                return 409, None
             session['runs'] = [stamp for stamp in session['runs'] if stamp > now-60]
+            session['model_runs'] = [stamp for stamp in session['model_runs'] if stamp > now-60]
+            if model and (len(session['model_runs']) >= 3 or session['model_total'] >= 4):
+                return 429, None
             if session['busy'] or len(session['runs']) >= 12 or len(self.runs) >= 60:
                 return 429, None
             if not self.execution.acquire(blocking=False):
                 return 503, None
+            if model:
+                session['model_runs'].append(now)
+                session['model_total'] += 1
             session['busy'] = True
             session['runs'].append(now)
             self.runs.append(now)
@@ -156,7 +189,9 @@ class BoundedServer(ThreadingHTTPServer):
         pass
 
 
-def create_server(host, port, origin, sessions=None, runner=run_scenario, secure=True):
+def create_server(host, port, origin, sessions=None, runner=run_scenario, secure=True, model_runner=None, public_demo=False):
+    if model_runner is not None and not public_demo and (host != '127.0.0.1' or secure):
+        raise ValueError('Gemini adapter is currently restricted to private loopback tests')
     parsed = urlsplit(origin)
     if (parsed.scheme != ('https' if secure else 'http') or parsed.path or parsed.query or parsed.fragment
             or not parsed.netloc or parsed.username or parsed.password):
@@ -233,6 +268,9 @@ def create_server(host, port, origin, sessions=None, runner=run_scenario, secure
                     self.reply(503, b'{"error":"demo capacity reached; retry later"}')
                     return
                 body = (Path(__file__).resolve().parent.parent/'web'/'hosted.html').read_text().replace('__NONCE__', session['csrf'])
+                controls = (Path(__file__).resolve().parent.parent/'web'/'gemini_controls.html').read_text() if model_runner else ''
+                controls = controls.replace('__PUBLIC_DEMO__', 'true' if public_demo else 'false')
+                body = body.replace('__GEMINI_CONTROLS__', controls.replace('__NONCE__', session['csrf']))
                 self.reply(200, body.encode(), 'text/html; charset=utf-8', session['csrf'], key)
             else:
                 self.reply(404, b'{"error":"not found"}')
@@ -241,7 +279,9 @@ def create_server(host, port, origin, sessions=None, runner=run_scenario, secure
             if not self.gate(post=True):
                 self.reply(403, b'{"error":"same-origin request required"}')
                 return
-            if self.path != '/api/run':
+            model_request = self.path == '/api/gemini' and model_runner is not None
+            start_request = self.path == '/api/demo/start' and model_runner is not None and public_demo
+            if self.path != '/api/run' and not model_request and not start_request:
                 self.reply(404, b'{"error":"not found"}')
                 return
             try:
@@ -258,19 +298,29 @@ def create_server(host, port, origin, sessions=None, runner=run_scenario, secure
                         result[key] = value
                     return result
                 value = json.loads(self.rfile.read(int(lengths[0])), object_pairs_hook=unique)
-                if not isinstance(value, dict) or set(value) != {'scenario'} or not isinstance(value['scenario'], str) or value['scenario'] not in SCENARIOS:
+                allowed_scenarios = ({'read-a', 'read-b', 'prompt-override'} if public_demo else {'allow-a', 'allow-b', 'cross-a', 'cross-b', 'prompt-override'}) if model_request else SCENARIOS
+                if start_request:
+                    if not isinstance(value, dict) or set(value) != {'customer'} or value['customer'] not in ('A', 'B'):
+                        raise ValueError()
+                elif not isinstance(value, dict) or set(value) != {'scenario'} or not isinstance(value['scenario'], str) or value['scenario'] not in allowed_scenarios:
                     raise ValueError()
                 tokens = self.headers.get_all('X-Lab-CSRF', [])
                 if len(tokens) != 1 or len(tokens[0]) > 128:
                     self.reply(403, b'{"error":"valid visitor session required"}')
                     return
-                status, session = sessions.begin(self.cookie(), tokens[0])
+                status, session = sessions.begin(self.cookie(), tokens[0], model=model_request, demo_required=model_request and public_demo)
                 if session is None:
                     self.reply(status, b'{"error":"session unavailable or demo busy; reload or retry later"}')
                     return
                 try:
-                    result = runner(value['scenario'])
-                    self.reply(200, json.dumps(result).encode())
+                    if start_request:
+                        new_cookie, result = sessions.replace_demo(self.cookie(), session, value['customer'])
+                    elif model_request:
+                        context = {'token': self.cookie(), 'resolver': sessions.resolve_demo} if public_demo else {'id': session['model_subject'], 'expires': session['expires']}
+                        result = model_runner(value['scenario'], context)
+                    else:
+                        result = runner(value['scenario'])
+                    self.reply(200, json.dumps(result).encode(), cookie=new_cookie if start_request else None)
                 except Exception:
                     self.reply(503, b'{"error":"execution failed closed; no result available"}')
                 finally:
@@ -294,6 +344,8 @@ def main():
     if not opa:
         raise SystemExit('OPA missing; hosted startup denied')
     subprocess.run([opa, 'check', '--strict', 'policy'], check=True, timeout=5, capture_output=True)
+    from .gemini_runtime import optional_model
+    model_runner = optional_model(os.environ)
     sessions = Sessions()
     stop = threading.Event()
     def sweep():
@@ -301,8 +353,8 @@ def main():
             sessions.cleanup()
     threading.Thread(target=sweep, daemon=True).start()
     try:
-        with create_server('0.0.0.0', port, 'https://'+hostname, sessions) as server:
-            print('Synthetic broker demo ready; no model or live Salesforce integration enabled.', flush=True)
+        with create_server('0.0.0.0', port, 'https://'+hostname, sessions, model_runner=model_runner, public_demo=model_runner is not None) as server:
+            print('Synthetic broker demo ready; optional Gemini '+('enabled by reviewed configuration' if model_runner else 'disabled')+'. No live Salesforce integration.', flush=True)
             server.serve_forever()
     finally:
         stop.set()

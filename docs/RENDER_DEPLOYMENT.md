@@ -2,12 +2,12 @@
 
 Author: **Kehinde Bade**
 
-This synthetic deployment source is approved for publication to the demo repository and deployment to a Free Render service. Hosted verification is pending. The hosted entrypoint makes fixed scripted requests through the existing Broker and actual OPA policy. Synthetic Salesforce provides only Id and Name. It runs no model, MCP transport, live OAuth or Salesforce connection. The local Ollama, MCP and live Salesforce modes remain available separately.
+This synthetic deployment source is approved for publication to the demo repository and deployment to a Free Render service. Hosted verification is pending. The hosted entrypoint makes fixed scripted requests through the existing Broker and actual OPA policy. Synthetic Salesforce provides only Id and Name. By default it runs no model, MCP transport, live OAuth or Salesforce connection. The separate optional Gemini candidate is described in GEMINI_DEMO.md and stays disabled until activation approval. The local Ollama, MCP and live Salesforce modes remain available separately.
 
 ## Review and setup
 
 1. Use the reviewed source in `kenydebo/AI-Access-Broker-Demo`. Publication and a Free Render deployment were approved on 2026-10-03. Verify the commit selected by Render before deploying.
-2. Sign in to Render yourself and securely connect that public repository. Do not paste credentials into chat. Choose a Git-backed **Web Service**, Docker runtime, branch `main`, Dockerfile `./Dockerfile`, root context `.`, **Free** instance, one instance, no disks or database. Disable automatic deploys during review. No environment secrets are needed.
+2. Sign in to Render yourself and securely connect that public repository. Do not paste credentials into chat. Choose a Git-backed **Web Service**, Docker runtime, branch `main`, Dockerfile `./Dockerfile`, root context `.`, **Free** instance, one instance, no disks or database. Disable automatic deploys during review. No environment secrets are needed for scripted mode; optional Gemini activation requires its separately reviewed private environment key.
 3. Render supplies `PORT` (default 10000) and `RENDER_EXTERNAL_HOSTNAME`. The service requires the exact generated `*.onrender.com` hostname, binds `0.0.0.0:$PORT` inside its container, and uses `/health` as the health check path. Do not set an Ollama URL or Salesforce keys. Custom domains are not supported by this candidate.
 4. Create the reviewed Free synthetic Web Service. No paid plan, database, credentials or live integration is authorized. A successful build is followed by hosted health and scenario verification.
 
@@ -30,7 +30,7 @@ No pip packages or apt installs are needed for this isolated hosted runtime. The
 - Docker Official Python `3.13-slim-bookworm`, digest `sha256:5024f48ba9441d4b13a95d3945abc6365538e3a31109833367a1923523c6efed`, from `docker.io/library/python`.
 - Official OPA `1.21.1-static`, digest `sha256:4675ab04ad1627f74741d2d9c5142698c79e18b7b09f192587d31d6dba20838e`, from `docker.io/openpolicyagent/opa`.
 
-The official registry manifest metadata and amd64/arm64 availability were inspected on 2026-10-03. These are content pins, not an independently verified signature/attestation or vulnerability-free claim. No images were downloaded during preparation. Docker build runs a strict OPA policy check before switching to UID 10001. `.dockerignore` excludes everything by default and admits only the exact synthetic runtime files; Dockerfile copies no live adapters, `.local`, Git history, virtual environment or credentials. The broader review archive includes local modes; it is not the Docker runtime context.
+The official registry manifest metadata and amd64/arm64 availability were inspected on 2026-10-03. These are content pins, not an independently verified signature/attestation or vulnerability-free claim. No images were downloaded during preparation. Docker build runs a strict OPA policy check before switching to UID 10001. `.dockerignore` excludes everything by default and admits only the exact synthetic runtime files; Dockerfile includes optional Gemini standard-library modules but copies no live Salesforce/OAuth adapters, `.local`, Git history, virtual environment or credentials. The broader review archive includes local modes; it is not the Docker runtime context.
 
 ## Visitor and execution boundaries
 

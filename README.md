@@ -114,3 +114,7 @@ See [verification evidence](docs/VERIFICATION.md), [threat model and limitations
 ## Hosted synthetic demo
 
 A separate bounded Render entrypoint supports the synthetic hosted demo. It uses scripted fixed scenarios with real broker and OPA decisions and synthetic data. It runs no model, MCP transport or Salesforce connection. See [Render preparation](docs/RENDER_DEPLOYMENT.md) for review gates, exact dependency pins and verification limits.
+
+## Optional Render Gemini demo candidate
+
+The Gemini candidate uses temporary server-issued Customer A/B sessions, a bounded agent proposal, broker/OPA decisions and synthetic records. This is demo identity, not real human authentication; no Salesforce connection is used. Activation is disabled by default. See [the selected demo flow and activation prerequisites](docs/GEMINI_DEMO.md). Source and mocked-provider tests are prepared; live Gemini has not been verified.
