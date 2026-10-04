@@ -1,8 +1,8 @@
-# Render Gemini demo candidate
+# Render Gemini demo
 
 Author: **Kehinde Bade**
 
-The selected demonstration uses temporary server-issued Customer A/B identities and synthetic records. It does not use Salesforce, real-person authentication, shared test passwords or a separate identity provider. The goal is to show the complete session-to-agent-to-broker-to-policy flow on Render, with honest labels for the simulated identity and tool. Source publication and disabled deployment were approved on 2026-10-04; offline tests pass. Gemini activation is disabled by default; no live provider call or key access has occurred for this candidate.
+The deployed demonstration uses temporary server-issued Customer A/B identities and synthetic records. It does not use Salesforce, real-person authentication, shared test passwords or a separate identity provider. Gemini was enabled on the deployed Render instance on 2026-10-04, and the live A/B scope matrix passed. Source configuration remains disabled by default until an operator explicitly opts in. The hosted tool flow is manual Gemini function calling, not MCP; local MCP/Ollama/Salesforce modes remain separate.
 
 ## Actual flow
 
@@ -14,9 +14,9 @@ The selected demonstration uses temporary server-issued Customer A/B identities 
 
 The Rego and request-schema naming retain the existing broker lab's `salesforce-read` audience and synthetic record contract for compatibility. Those names do not enable a Salesforce adapter, credential or network call. The public container excludes live Salesforce/OAuth/MCP/Ollama modules. Existing local enterprise modes are preserved separately.
 
-## Activation on Render, after review
+## Deployment configuration
 
-The existing service can use the same Dockerfile, Free plan, port and `/health` path. The candidate adds only standard-library modules and one static UI fragment to the strictly allowlisted image. It installs no Python package. With the following settings absent, the public scripted scenarios continue and no Gemini key is inspected:
+The existing service can use the same Dockerfile, Free plan, port and `/health` path. The Gemini path adds only standard-library modules and one static UI fragment to the strictly allowlisted image. It installs no Python package. With the following settings absent, the public scripted scenarios continue and no Gemini key is inspected:
 
 | Setting | Reviewed activation value |
 | --- | --- |
@@ -27,13 +27,24 @@ The existing service can use the same Dockerfile, Free plan, port and `/health` 
 
 The acknowledgement is an operator enable switch, not authentication, geolocation or automatic terms compliance. Unsupported or incomplete enabled configuration stops startup before a provider request. A key alone does not enable the feature. Setting `BROKER_GEMINI_ENABLED=0` disables it again.
 
-Before activation the user must review the source, authorize publication and Render configuration, confirm project/model access and actual quota, decide the permitted audience under Google's terms, supply a key securely and authorize the first live requests. No billing change is assumed or authorized. The current public model feature is not activated. The Render-hosted code will call Google's model, not run the model inside Render's 512 MiB instance.
+The user approved activation and the deployed instance is enabled. The key was supplied privately through Render; it is not part of the source or evidence. The hosted code calls Google's model rather than running it inside Render's 512 MiB instance. This activation does not establish the project's exact free-tier quota or authorize billing changes. Any new deployment still needs operator review, private key setup, and confirmation of model access, provider limits and permitted audience.
 
 Google's terms restrict API clients offered to EEA, Swiss or UK users to Paid Services. The user's Canadian location does not settle unrestricted global public access. No fabricated country check or compliance claim is implemented. Decide audience/eligibility and any paid-service implications before exposing the live model to everyone. The scripted public demo can remain available while that decision is pending.
 
 ## Budgets and failure behavior
 
-One active execution globally. Visitor cookies expire absolutely after 15 minutes; task sessions expire after five minutes. Per browser: at most three model runs/minute and four in the visitor lifetime, retained when switching A/B. Per process: at most four model runs/minute and twenty/24 hours, with at most two provider attempts per run and no retry. These in-memory bounds reset on restart and are not a durable billing cap. Configure and inspect provider project quotas independently.
+One active execution globally. The application limits are:
+
+| Boundary | Limit |
+|---|---|
+| Server process | 20 reserved model runs per rolling 24 hours; 4 per rolling minute |
+| Visitor session | 4 admitted model runs over its absolute 15-minute lifetime; 3 per rolling minute |
+| Task session | At most 5 minutes, also bounded by visitor expiry |
+| Provider calls | At most 2 attempts per run; no retries |
+
+Twenty reserved runs can make at most 40 provider attempts in that process/window. Reservations count even when a provider call fails, is safety-blocked or produces no tool call; they do not promise successful reads. Browser admission can also consume a visitor run before the process budget rejects it. Reloading, starting a new task or switching A/B retains visitor counters and the original expiry.
+
+These budgets, identities and grants are process-memory state. A restart loses the counters and sessions, so the limits are not durable across restarts or a billing cap. They are application safeguards, **not Google's free-tier allowance**. Actual project quota was not verified for this update; inspect the selected model's request/token limits and project tier separately. Provider quota errors can still occur below the local limits.
 
 The fixed provider URL is HTTPS with certificate verification, no redirects and no system proxy autodetection. The key is sent only in `x-goog-api-key`, never a URL. Input prompts are server-owned and below 256 characters. Responses and follow-up requests are capped at 64 KiB; output requests specify 512 tokens, parts are bounded and final displayed text is capped at 2,048 characters. Socket timeout is 12 seconds; OPA timeout is 10 seconds/evaluation. These socket bounds do not guarantee OS DNS or all slow-response wall time. No production availability or DDoS protection is claimed.
 
@@ -41,8 +52,21 @@ Provider safety block, no tool call, host rejection, broker denial and provider/
 
 ## Verified versus pending
 
-Offline tests use mocked Gemini HTTPS responses and actual installed OPA. They check the four A/B combinations, opaque token rotation, unknown/tampered/expired tokens, session and grant separation, quota retention across identity changes, no token disclosure to the model, policy rechecks, prompt override, malformed/parallel calls, provider failures and unchanged scripted scenarios. Runtime configuration tests prove disabled mode does not inspect a key.
+On 2026-10-04 the enabled hosted page completed genuine Gemini A/B scope tests:
 
-Pending: Gemini activation approval, actual project quota/audience decision, first live model roundtrip and hosted browser testing of the enabled feature. A disabled deployment is approved; it does not authorize model calls. No Salesforce callback or credentials are required for this chosen demo. Real Salesforce validation remains separate and deferred.
+| Temporary session | Requested record | Broker outcome | Downstream result |
+|---|---|---|---|
+| A | A | Allow | Correct synthetic A record, 1 read |
+| A | B | Deny | No data, 0 reads |
+| B | A | Deny | No data, 0 reads |
+| B | B | Allow | Correct synthetic B record, 1 read |
+
+The live prompt-override run returned `model_outcome=no_tool_call`, `broker_outcome=not_evaluated`, `authorized_data=null` and zero reads. No model text was exposed. This proves no read occurred in that run; it does **not** demonstrate a broker denial of an actual override call. A future live override may propose another record, resist the prompt, decline a tool or be provider-blocked, so evaluate the actual trace rather than assuming an outcome.
+
+Live stale-tab testing verified `page_out_of_sync` and zero model API attempts. Starting a session in another tab rotates the shared cookie while the original page retains its old CSRF token. Reload that page before continuing. Separate messages cover missing/expired tasks, visitor exhaustion, request rate limits and busy execution; none relax the checks or limits.
+
+All 133 offline tests and strict actual installed OPA checks passed for the admission diagnostic update. Gemini HTTPS responses are mocked in those offline tests. They cover the A/B combinations, token rotation and expiry, session/grant separation, identity-change budget retention, no token disclosure, policy rechecks, injected prompt override, malformed/parallel calls, provider failures and unchanged scripted scenarios. Disabled-mode tests prove no key inspection occurs when activation is off. Those offline checks are separate from the live results above.
+
+Pending: exact Google project/model quota verification, a live override that actually exercises the proposed-call enforcement boundary, and separate private validation of the complete model/MCP/live Salesforce path. No production authentication, durable audit/budget guarantee or production assurance is claimed. No Salesforce credentials or callback are needed for this hosted synthetic demo.
 
 Sources checked 2026-10-03: [Gemini model](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite), [REST generateContent contract](https://ai.google.dev/api/generate-content), [key handling](https://ai.google.dev/gemini-api/docs/api-key), [project rate limits](https://ai.google.dev/gemini-api/docs/rate-limits), [terms](https://ai.google.dev/gemini-api/terms), [Render environment configuration](https://render.com/docs/configure-environment-variables).

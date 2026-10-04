@@ -113,8 +113,25 @@ See [verification evidence](docs/VERIFICATION.md), [threat model and limitations
 
 ## Hosted synthetic demo
 
-A separate bounded Render entrypoint supports the synthetic hosted demo. It uses scripted fixed scenarios with real broker and OPA decisions and synthetic data. It runs no model, MCP transport or Salesforce connection. See [Render preparation](docs/RENDER_DEPLOYMENT.md) for review gates, exact dependency pins and verification limits.
+The [hosted demo](https://ai-access-broker-demo.onrender.com) uses temporary server-issued Customer A/B identities, Gemini manual tool proposals, the real broker and OPA, and synthetic records. Gemini was enabled on the deployed instance on 2026-10-04. Source configuration remains disabled by default until the operator explicitly opts in. This hosted path has no MCP transport, Ollama, Salesforce connection or real-person authentication; those belong to the separate local flow above. Scripted broker/OPA tests remain available without Gemini.
 
-## Optional Render Gemini demo candidate
+### Verified hosted results, 2026-10-04
 
-The Gemini candidate uses temporary server-issued Customer A/B sessions, a bounded agent proposal, broker/OPA decisions and synthetic records. This is demo identity, not real human authentication; no Salesforce connection is used. Activation is disabled by default. See [the selected demo flow and activation prerequisites](docs/GEMINI_DEMO.md). Source and mocked-provider tests are prepared; live Gemini has not been verified.
+| Temporary session | Requested record | Live broker result | Synthetic reads |
+|---|---|---|---|
+| Customer A | A | Allow, correct A record | 1 |
+| Customer A | B | Deny | 0 |
+| Customer B | A | Deny | 0 |
+| Customer B | B | Allow, correct B record | 1 |
+
+The live prompt-override run returned `no_tool_call`: the broker was not evaluated, no model text was exposed, and no record was read. This does **not** prove that the broker blocked an override tool call. Offline injected-provider tests verify the host binding and broker boundaries independently of nondeterministic model behavior.
+
+All 133 offline tests and actual installed OPA checks passed for the diagnostic update. Live stale-tab testing returned `page_out_of_sync` with zero model API attempts. The UI now explains session expiry, stale pages, rate limits, exhausted visitor budgets and busy execution separately.
+
+### Current run limits
+
+The demo permits **20 reserved Gemini runs per rolling 24 hours per server process**, and four per minute. Each run makes at most two provider requests, so that is at most 40 attempts in that process/window. A run can consume its reservation even when the provider fails or makes no tool call; this is not a guarantee of 20 successful reads.
+
+Each visitor gets three model runs per minute and four during an absolute 15-minute visitor lifetime. A task lasts at most five minutes, bounded by visitor expiry. Reloading, starting a task or switching A/B does not reset that visitor budget or extend its lifetime. All budget/session state is in memory; restarting loses it. These are application safeguards, not a durable billing cap or Google's free-tier quota. The actual provider allowance depends on the project's model access, request/token limits and tier, and has not been verified here.
+
+See [Gemini flow, evidence and limits](docs/GEMINI_DEMO.md) and [Render preparation](docs/RENDER_DEPLOYMENT.md). These verified hosted results do not validate the complete live Salesforce/model/MCP path.
