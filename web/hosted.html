@@ -27,13 +27,12 @@ footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--muted);color:
 @media(max-width:560px){body{font-size:16px}button{width:100%}pre{font-size:13px;padding:14px}h2{font-size:23px}}
 
 .lead{font-size:19px;max-width:760px}.note{font-size:14px;color:var(--muted)}
-.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));list-style:none;padding:0;gap:16px;margin:24px 0}
-.steps li{margin:0}.steps strong{display:block;color:var(--burgundy);font-size:15px}.steps span{display:block;font-size:14px;line-height:1.5;margin-top:6px}
 details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summary{cursor:pointer;font-weight:600;color:var(--burgundy);padding:8px 0;line-height:1.4}
 .controls{display:grid;grid-template-columns:1fr 1fr;gap:24px}.controls p{font-size:14px}.controls label{display:block}.controls button{width:100%}
+.run-preview{background:var(--canvas);padding:16px;border-radius:8px;margin:12px 0}.run-preview pre{margin:8px 0;font-size:13px;padding:12px}.outcome-guide{display:flex;flex-wrap:wrap;gap:10px 24px;padding-left:20px;font-size:14px}.outcome-guide li{margin:0}.try-demo{display:inline-block;padding:8px 0}.run-evidence{margin-top:20px}
 .proposal-mismatch{border-left:4px solid var(--burgundy);padding:12px;background:var(--canvas);font-weight:600}
 .outcome{background:var(--canvas);border-left:4px solid var(--burgundy);padding:18px;margin-top:24px}.outcome h3{margin:0 0 8px;font-size:22px}.outcome p{margin:0}.data-summary{font-weight:600;margin-top:12px}
-@media(max-width:700px){.steps{grid-template-columns:1fr}.steps li{display:grid;grid-template-columns:130px 1fr;gap:12px}.steps span{margin:0}.controls{grid-template-columns:1fr;gap:12px}.lead{font-size:17px}}
+@media(max-width:700px){.controls{grid-template-columns:1fr;gap:12px}.lead{font-size:17px}}
 
 .flow{margin:24px 0 32px;padding:clamp(16px,3vw,24px);background:var(--white);border:1px solid var(--muted);border-radius:12px}
 .flow figcaption{font-size:20px;font-weight:700;color:var(--burgundy);margin-bottom:16px}
@@ -50,20 +49,22 @@ details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summa
 </style><main>
 <p class="tag">AI Access Broker · Personal project by Kehinde Bade</p>
 <h1>A request is not permission.</h1>
+<p class="lead">See what Gemini proposed, whether the broker evaluated it, and whether any demo data was read.</p>
+<p><a class="try-demo" href="#demo">Try the demo ↓</a></p>
 <figure class="flow" aria-labelledby="flow-title">
 <figcaption id="flow-title">How access is enforced in this demo</figcaption>
 <ol class="flow-main" aria-label="Request path">
 <li><strong>Temporary session</strong><small>Customer A or B, with its own scope</small><span class="flow-arrow" aria-hidden="true">→</span></li>
 <li><strong>Gemini request</strong><small>Proposes one specific read</small><span class="flow-arrow" aria-hidden="true">→</span></li>
 <li><strong>Broker validation</strong><small>Checks the session token and requested scope</small><span class="flow-arrow" aria-hidden="true">→</span></li>
-<li><strong>OPA / Rego</strong><small>Decides whether access is permitted</small></li>
+<li><strong>OPA policy engine / Rego</strong><small>Decides whether access is permitted</small></li>
 </ol>
 <p class="flow-decision"><span aria-hidden="true">↓ </span>Policy decision</p>
 <div class="flow-branches">
 <div><h3>Allowed</h3><ol class="flow-result" aria-label="Allowed read path">
-<li><strong>Action grant</strong><small>Short-lived and single-use</small><span class="flow-arrow" aria-hidden="true">→</span></li>
+<li><strong>One-use permission</strong><small>Short-lived and single-use</small><span class="flow-arrow" aria-hidden="true">→</span></li>
 <li><strong>Broker recheck</strong><small>Policy checked again; grant consumed</small><span class="flow-arrow" aria-hidden="true">→</span></li>
-<li><strong>Synthetic read</strong><small>Only permitted data returned</small></li>
+<li><strong>Read demo data</strong><small>Only permitted data returned</small></li>
 </ol></div>
 <div><h3>Denied</h3><div class="flow-blocked"><strong>No data returned</strong><small>The read does not execute.</small></div></div>
 </div>
@@ -73,14 +74,7 @@ details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summa
 <p class="lead">Every agent request should be tied to the user who started it. The broker validates the session token, checks that user’s permitted scope against policy, and issues short-lived permission for the specific action. The agent cannot widen access by claiming another identity or scope.</p>
 <p class="note">A/B are temporary demo identities. Records are synthetic. No real-person authentication or enterprise-system connection is used.</p>
 <p><a href="https://github.com/kenydebo/AI-Access-Broker-Demo" target="_blank" rel="noopener noreferrer">View source on GitHub</a></p>
-<h2>What each step does</h2>
-<ol class="steps" aria-label="How the design works, not a running execution trace">
-<li><strong>1. Identity</strong><span>A temporary session binds Customer A or B to its permitted records.</span></li>
-<li><strong>2. Agent request</strong><span>Gemini proposes a specific read for the task.</span></li>
-<li><strong>3. Broker</strong><span>Validates the session token and the exact requested action.</span></li>
-<li><strong>4. Policy</strong><span>OPA evaluates the Rego policy to decide whether the requested action is permitted. Policies can cover reads and writes; this demo exercises read access.</span></li>
-<li><strong>5. Data</strong><span>A timed, single-use grant is checked again before a read.</span></li>
-</ol>
+<div id="demo">
 __GEMINI_CONTROLS__
 <details><summary>Scripted tests: scope, expiry and replay</summary>
 <p>These tests use the real broker and OPA with synthetic records. They run without Gemini.</p>
@@ -88,17 +82,28 @@ __GEMINI_CONTROLS__
 <button id="run">Run scripted test</button><p id="status" role="status" aria-live="polite">Ready. Synthetic records only.</p>
 <details><summary>Scripted test execution evidence</summary><pre id="result">No test has run.</pre></details>
 </details>
+</div>
 <details><summary>What this demo proves and its limits</summary>
 <p>The customer’s access does not automatically become the agent’s permission. Each action is scoped, timed and checked against policy. This demonstrates a Zero Trust principle: independently verify the requested access.</p>
 <p>The broker uses trusted session identity instead of agent or MCP identity claims. This hosted demo uses temporary sessions and manual Gemini tools; real-person sign-in and MCP belong to the wider architecture/local flow. The model proposes requests; the broker enforces access. Only broker-returned data and read counts are evidence. Model text remains untrusted. A/B scope checks have passed live Gemini testing. On 2026-10-04 the live override run returned no tool call, so it did not exercise host or broker denial.</p>
 <p>Temporary identities do not prove a real human’s identity. This is a lab, with synthetic data and bounded usage. Sessions and quotas are held in memory. A sleeping free service can take about one minute to wake.</p>
 </details>
-<section aria-labelledby="extension-title"><h2 id="extension-title">Extending this approach</h2>
-<p>OPA policies can be extended to align with the organisation’s risk appetite, including read and write actions.</p>
-<p>Broker audit events can record the actor/session, action, allowed or denied decision, and outcome for each mediated request. This gives visibility into actions routed through the broker.</p>
-<p>Risky actions can require approval: Rego returns an approval-required decision, and the broker’s workflow obtains and verifies human approval before execution.</p>
-<p>Routine, low-risk actions stay automatic. Meaningful risk or exception thresholds trigger approval for an exact action, scope and time window, helping avoid approval fatigue.</p>
-<p class="note">This read-only demo does not implement writes, approval workflows or durable enterprise audit logging.</p>
+<section aria-labelledby="extension-title"><h2 id="extension-title">Possible extensions, not implemented in this demo</h2>
+<p class="note">This demo is read-only. Writes, approval workflows and durable enterprise audit logging are not implemented.</p>
+<p>OPA policies could be extended to align with the organisation’s risk appetite, including read and write actions.</p>
+<p>Durable broker audit events could record the actor/session, action, allowed or denied decision, and outcome for each mediated request. This could give visibility into actions routed through the broker.</p>
+<p>Risky actions could require approval: Rego could return an approval-required decision, and a broker workflow could obtain and verify human approval before execution.</p>
+<p>Routine, low-risk actions could stay automatic. Meaningful risk or exception thresholds could trigger approval for an exact action, scope and time window, helping avoid approval fatigue.</p>
+
 </section>
 <footer><span class="footer-info">Author: Kehinde Bade. Demo identities and synthetic data. <a href="https://github.com/kenydebo/AI-Access-Broker-Demo/blob/main/docs/GEMINI_DEMO.md" target="_blank" rel="noopener noreferrer">Technical notes</a></span><small class="footer-credit">Blaecwood</small></footer>
-</main><script nonce="__NONCE__">const button=document.getElementById('run'),status=document.getElementById('status'),result=document.getElementById('result');button.onclick=async()=>{button.disabled=true;status.textContent='Checking the scripted request…';result.textContent='';try{const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-CSRF':'__NONCE__'},body:JSON.stringify({scenario:document.getElementById('scenario').value})});const data=await response.json();result.textContent=JSON.stringify(data,null,2);status.textContent=response.ok?(data.decision==='allow'?'Allowed. One permitted synthetic read.':data.decision==='replay_denied_after_one_read'?'Replay blocked. The first read succeeded; the second attempt made no read.':'Blocked. No synthetic data was read.'):data.error;}catch(error){status.textContent='Request unavailable. Reload and try again.';}finally{button.disabled=false;}};</script></html>
+</main><script nonce="__NONCE__">function scriptedOutcome(data,scenario){
+const targets={'allow-a':['A','A'],'allow-b':['B','B'],'cross-a':['A','B'],'cross-b':['B','A'],expired:['A','A'],replay:['A','A']},expected=targets[scenario];
+if(!expected||!data||typeof data!=='object'||Array.isArray(data)||data.scenario!==scenario||data.customer!==expected[0]||data.requested_record!==expected[1]||!Array.isArray(data.events)||!Number.isInteger(data.downstream_reads))throw new Error('Unverified scripted response');
+const validData=data.data&&typeof data.data==='object'&&!Array.isArray(data.data)&&Object.keys(data.data).sort().join(',')==='Id,Name'&&data.data.Id==='mock-'+expected[1]&&data.data.Name==='Synthetic '+expected[1];
+if(data.decision==='deny'&&data.downstream_reads===0&&data.data===null)return 'Policy or grant denied the scripted request. Verified demo data reads: 0.';
+if(data.decision==='allow'&&data.downstream_reads===1&&validData&&scenario!=='expired'&&scenario!=='replay')return 'Allowed. Verified demo data reads: 1.';
+if(data.decision==='replay_denied_after_one_read'&&scenario==='replay'&&data.downstream_reads===1&&validData)return 'Replay blocked. The first read succeeded; the second attempt made no read. Verified total reads: 1.';
+throw new Error('Inconsistent scripted execution evidence');
+}
+const button=document.getElementById('run'),status=document.getElementById('status'),result=document.getElementById('result');button.onclick=async()=>{button.disabled=true;status.textContent='Checking the scripted request…';result.textContent='Awaiting execution evidence; read count unknown.';const scenario=document.getElementById('scenario').value;try{const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-CSRF':window.brokerCSRF??'__NONCE__'},body:JSON.stringify({scenario})});const data=await response.json();if(response.ok){const summary=scriptedOutcome(data,scenario);result.textContent=JSON.stringify(data,null,2);status.textContent=summary;}else if(data&&typeof data.error==='string'&&response.status<500){status.textContent=data.error;result.textContent='Request stopped; no execution counts reported.';}else throw new Error('Unverified scripted execution response');}catch(error){result.textContent='Execution outcome unknown; no verified result or read count received.';status.textContent='Execution outcome unknown: no verified response received. This test may have executed; do not automatically retry.';}finally{button.disabled=false;}};</script></html>

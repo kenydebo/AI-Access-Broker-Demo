@@ -121,6 +121,8 @@ def content(response):
             raise ModelUnavailable('output_limit')
         if 'thought' in part and type(part['thought']) is not bool:
             raise ModelUnavailable('invalid_response')
+        if part.get('thought') is True and 'functionCall' in part:
+            raise ModelUnavailable('thought_tool_call_rejected')
         if 'thoughtSignature' in part and (not isinstance(part['thoughtSignature'], str) or len(part['thoughtSignature']) > 16000):
             raise ModelUnavailable('output_limit')
     return value, None
@@ -158,7 +160,10 @@ def response_evidence(response):
     for part in parts:
         if not isinstance(part, dict):
             continue
-        if part.get('thought'):
+        if 'thought' in part and type(part['thought']) is not bool:
+            evidence['thought_content_omitted'] = True
+            continue
+        if part.get('thought') is True:
             evidence['thought_content_omitted'] = True
             continue
         if isinstance(part.get('text'), str):
@@ -360,7 +365,7 @@ class GeminiAgent:
                 result['model_outcome'] = 'answer_received_untrusted'
         except ModelUnavailable as error:
             result['model_outcome'] = str(error)
-            if str(error) in ('host_request_binding_denied', 'invalid_tool_call', 'multiple_tool_calls_rejected'):
+            if str(error) in ('host_request_binding_denied', 'invalid_tool_call', 'multiple_tool_calls_rejected', 'thought_tool_call_rejected'):
                 result['host_outcome'] = 'rejected'
             result['events'].append({'stage': 'model_or_host_rejection', 'reason': str(error)})
         finally:

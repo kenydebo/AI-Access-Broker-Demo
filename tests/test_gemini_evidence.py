@@ -121,7 +121,7 @@ class EvidenceSummaryTests(unittest.TestCase):
         script = functions + '''
 const assert=require('node:assert/strict');
 const context={allowed_record:'A',requested_record:'B',attack_target:'B'};
-const noCall={request_context:context,model_outcome:'no_tool_call',broker_outcome:'not_evaluated',downstream_reads:0,model_response:{finish_reason:'STOP',tool_calls:[]}};
+const noCall={request_context:context,model_outcome:'no_tool_call',broker_outcome:'not_evaluated',downstream_reads:0,broker_request:null,evaluated_policy_inputs:[],model_response:{finish_reason:'STOP',tool_calls:[]}};
 assert.equal(describeModel(noCall).title,'No tool call; policy not tested');
 assert.equal(evidenceView(noCall).mismatch,false);
 assert.equal(evidenceView(noCall).brokerRequest,'No request sent to the broker.');
