@@ -36,14 +36,14 @@ details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summa
 <p class="tag">Blaecwood · AI access broker lab</p>
 <h1>A request is not permission.</h1>
 <p class="lead">Every agent request should be tied to the user who started it. The broker validates the session token, checks that user’s permitted scope against policy, and issues short-lived permission for the specific action. The agent cannot widen access by claiming another identity or scope.</p>
-<p class="note">A/B are temporary demo identities. Records are synthetic. No real-person authentication or Salesforce connection is used.</p>
+<p class="note">A/B are temporary demo identities. Records are synthetic. No real-person authentication or enterprise-system connection is used.</p>
 <p><a href="https://github.com/kenydebo/AI-Access-Broker-Demo" target="_blank" rel="noopener noreferrer">View source on GitHub</a></p>
 <h2>What each step does</h2>
 <ol class="steps" aria-label="How the design works, not a running execution trace">
 <li><strong>1. Identity</strong><span>A temporary session binds Customer A or B to its permitted records.</span></li>
 <li><strong>2. Agent request</strong><span>Gemini proposes a specific read for the task.</span></li>
 <li><strong>3. Broker</strong><span>Validates the session token and the exact requested action.</span></li>
-<li><strong>4. Policy</strong><span>Rego decides whether that read is permitted.</span></li>
+<li><strong>4. Policy</strong><span>OPA evaluates the Rego policy to decide whether the requested action is permitted. Policies can cover reads and writes; this demo exercises read access.</span></li>
 <li><strong>5. Data</strong><span>A timed, single-use grant is checked again before a read.</span></li>
 </ol>
 __GEMINI_CONTROLS__
@@ -58,5 +58,12 @@ __GEMINI_CONTROLS__
 <p>The broker uses trusted session identity instead of agent or MCP identity claims. This hosted demo uses temporary sessions and manual Gemini tools; real-person sign-in and MCP belong to the wider architecture/local flow. The model proposes requests; the broker enforces access. Only broker-returned data and read counts are evidence. Model text remains untrusted. A/B scope checks have passed live Gemini testing; prompt override behavior is an advanced test, not a claimed live validation.</p>
 <p>Temporary identities do not prove a real human’s identity. This is a lab, with synthetic data and bounded usage. Sessions and quotas are held in memory. A sleeping free service can take about one minute to wake.</p>
 </details>
+<section aria-labelledby="extension-title"><h2 id="extension-title">Extending this approach</h2>
+<p>OPA policies can be extended to align with the organisation’s risk appetite, including read and write actions.</p>
+<p>Broker audit events can record the actor/session, action, allowed or denied decision, and outcome for each mediated request. This gives visibility into actions routed through the broker.</p>
+<p>Risky actions can require approval: Rego returns an approval-required decision, and the broker’s workflow obtains and verifies human approval before execution.</p>
+<p>Routine, low-risk actions stay automatic. Meaningful risk or exception thresholds trigger approval for an exact action, scope and time window, helping avoid approval fatigue.</p>
+<p class="note">This read-only demo does not implement writes, approval workflows or durable enterprise audit logging.</p>
+</section>
 <footer>Author: Kehinde Bade. Demo identities and synthetic data. <a href="https://github.com/kenydebo/AI-Access-Broker-Demo/blob/main/docs/GEMINI_DEMO.md" target="_blank" rel="noopener noreferrer">Technical notes</a></footer>
 </main><script nonce="__NONCE__">const button=document.getElementById('run'),status=document.getElementById('status'),result=document.getElementById('result');button.onclick=async()=>{button.disabled=true;status.textContent='Checking the scripted request…';result.textContent='';try{const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-CSRF':'__NONCE__'},body:JSON.stringify({scenario:document.getElementById('scenario').value})});const data=await response.json();result.textContent=JSON.stringify(data,null,2);status.textContent=response.ok?(data.decision==='allow'?'Allowed. One permitted synthetic read.':data.decision==='replay_denied_after_one_read'?'Replay blocked. The first read succeeded; the second attempt made no read.':'Blocked. No synthetic data was read.'):data.error;}catch(error){status.textContent='Request unavailable. Reload and try again.';}finally{button.disabled=false;}};</script></html>
