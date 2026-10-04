@@ -124,7 +124,9 @@ The [hosted demo](https://ai-access-broker-demo.onrender.com) uses temporary ser
 | Customer B | A | Deny | 0 |
 | Customer B | B | Allow, correct B record | 1 |
 
-The live prompt-override run returned `no_tool_call`: the broker was not evaluated, no model text was exposed, and no record was read. This does **not** prove that the broker blocked an override tool call. Offline injected-provider tests verify the host binding and broker boundaries independently of nondeterministic model behavior.
+The earlier hosted impersonation-prompt run returned `no_tool_call`: the broker was not evaluated, no model text was exposed, and no record was read. This does **not** prove that the broker blocked an override tool call. Offline injected-provider tests verify the host binding and broker boundaries independently of nondeterministic model behavior.
+
+The recording flow now offers **Cross-customer access test**: trusted session A requests B, and trusted B requests A, using a normal retrieval prompt. It does not ask Gemini to change identity or ignore permissions. Start A, run Read A, then run the cross-customer test and show the exact prompt, actual proposal, broker/OPA decision and returned records. A model refusal or no tool call is distinct from broker denial. Manual Read A/B and deterministic scripted tests remain available. The new automatic scenario has offline provider-fixture coverage with actual OPA; its live roundtrip remains for the deployment check.
 
 All 133 offline tests and actual installed OPA checks passed for the diagnostic update. Live stale-tab testing returned `page_out_of_sync` with zero model API attempts. The UI now explains session expiry, stale pages, rate limits, exhausted visitor budgets and busy execution separately.
 

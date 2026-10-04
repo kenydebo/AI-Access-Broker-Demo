@@ -308,7 +308,7 @@ def create_server(host, port, origin, sessions=None, runner=run_scenario, secure
                         result[key] = value
                     return result
                 value = json.loads(self.rfile.read(int(lengths[0])), object_pairs_hook=unique)
-                allowed_scenarios = ({'read-a', 'read-b', 'prompt-override'} if public_demo else {'allow-a', 'allow-b', 'cross-a', 'cross-b', 'prompt-override'}) if model_request else SCENARIOS
+                allowed_scenarios = ({'read-a', 'read-b', 'cross-customer'} if public_demo else {'allow-a', 'allow-b', 'cross-a', 'cross-b', 'prompt-override'}) if model_request else SCENARIOS
                 if start_request:
                     if not isinstance(value, dict) or set(value) != {'customer'} or value['customer'] not in ('A', 'B'):
                         raise ValueError()

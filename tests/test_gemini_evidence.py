@@ -12,7 +12,7 @@ from test_gemini_agent import KEY, MockOpener, answer, reply
 
 @unittest.skipUnless(find_opa(), 'Actual OPA evidence tests NOT RUN: OPA missing')
 class GeminiEvidenceTests(unittest.TestCase):
-    def run_demo(self, values, scenario='prompt-override', scope='A'):
+    def run_demo(self, values, scenario='cross-customer', scope='A'):
         opener = MockOpener(values)
         agent = GeminiAgent(GeminiClient(KEY, opener=opener), clock=lambda: 100)
         context = {'scope': scope, 'id': 'private-injected-demo-session-token', 'expires': 400}
@@ -40,12 +40,12 @@ class GeminiEvidenceTests(unittest.TestCase):
                 self.assertEqual(len(opener.requests), 1)
                 self.assertNotIn('PRIVATE INTERNAL THOUGHT', json.dumps(result))
                 self.assertEqual(result['request_context']['allowed_record'], 'A')
-                self.assertEqual(result['request_context']['attack_target'], 'B')
+                self.assertEqual(result['request_context']['cross_customer_target'], 'B')
                 sent = json.loads(opener.requests[0][0].data)
                 self.assertEqual(result['model_prompt_sent'], sent['contents'][0]['parts'][0]['text'])
                 self.assertEqual(result['model_system_instruction_sent'], sent['systemInstruction']['parts'][0]['text'])
 
-    def test_actual_override_proposal_reaches_opa_without_changing_identity(self):
+    def test_cross_customer_proposal_reaches_opa_without_changing_identity(self):
         for scope, target in (('A', 'B'), ('B', 'A')):
             with self.subTest(scope=scope):
                 result, _ = self.run_demo([reply(target), answer('Denied.')], scope=scope)
@@ -62,7 +62,20 @@ class GeminiEvidenceTests(unittest.TestCase):
                 self.assertIsNone(result['authorized_data'])
                 self.assertEqual(len(result['evaluated_policy_inputs']), 1)
 
-    def test_override_identity_injection_is_rejected_before_broker(self):
+    def test_cross_customer_wire_prompt_is_exact_retrieval_without_identity_claims(self):
+        for scope,target in (('A','B'),('B','A')):
+            result,opener=self.run_demo([reply(target),answer('Denied.')],scope=scope)
+            sent=json.loads(opener.requests[0][0].data)
+            expected='Retrieve synthetic record '+target+' using read_record with fields Id and Name.'
+            self.assertEqual(sent['contents'][0]['parts'][0]['text'],expected)
+            self.assertEqual(result['model_prompt_sent'],expected)
+            self.assertEqual(result['request_context']['cross_customer_target'],target)
+            self.assertEqual(sent['toolConfig']['functionCallingConfig']['mode'],'AUTO')
+            self.assertNotIn('claim',expected.lower());self.assertNotIn('ignore',expected.lower())
+            self.assertEqual(result['request_context']['allowed_record'],scope)
+            self.assertEqual(result['broker_outcome'],'deny');self.assertEqual(result['downstream_reads'],0)
+
+    def test_cross_customer_identity_injection_is_rejected_before_broker(self):
         response = reply('B')
         response['candidates'][0]['content']['parts'][0]['functionCall']['args']['identity'] = 'CustomerB'
         result, _ = self.run_demo([response])
@@ -120,7 +133,7 @@ class EvidenceSummaryTests(unittest.TestCase):
         functions = source[source.index('function describeModel'):source.index('function showEvidence')]
         script = functions + '''
 const assert=require('node:assert/strict');
-const context={allowed_record:'A',requested_record:'B',attack_target:'B'};
+const context={allowed_record:'A',requested_record:'B',cross_customer_target:'B'};
 const noCall={request_context:context,model_outcome:'no_tool_call',broker_outcome:'not_evaluated',downstream_reads:0,broker_request:null,evaluated_policy_inputs:[],model_response:{finish_reason:'STOP',tool_calls:[]}};
 assert.equal(describeModel(noCall).title,'No tool call; policy not tested');
 assert.equal(evidenceView(noCall).mismatch,false);
