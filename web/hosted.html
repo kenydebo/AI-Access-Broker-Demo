@@ -31,6 +31,7 @@ footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--muted);color:
 .steps li{margin:0}.steps strong{display:block;color:var(--burgundy);font-size:15px}.steps span{display:block;font-size:14px;line-height:1.5;margin-top:6px}
 details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summary{cursor:pointer;font-weight:600;color:var(--burgundy);padding:8px 0;line-height:1.4}
 .controls{display:grid;grid-template-columns:1fr 1fr;gap:24px}.controls p{font-size:14px}.controls label{display:block}.controls button{width:100%}
+.proposal-mismatch{border-left:4px solid var(--burgundy);padding:12px;background:var(--canvas);font-weight:600}
 .outcome{background:var(--canvas);border-left:4px solid var(--burgundy);padding:18px;margin-top:24px}.outcome h3{margin:0 0 8px;font-size:22px}.outcome p{margin:0}.data-summary{font-weight:600;margin-top:12px}
 @media(max-width:700px){.steps{grid-template-columns:1fr}.steps li{display:grid;grid-template-columns:130px 1fr;gap:12px}.steps span{margin:0}.controls{grid-template-columns:1fr;gap:12px}.lead{font-size:17px}}
 
@@ -89,7 +90,7 @@ __GEMINI_CONTROLS__
 </details>
 <details><summary>What this demo proves and its limits</summary>
 <p>The customer’s access does not automatically become the agent’s permission. Each action is scoped, timed and checked against policy. This demonstrates a Zero Trust principle: independently verify the requested access.</p>
-<p>The broker uses trusted session identity instead of agent or MCP identity claims. This hosted demo uses temporary sessions and manual Gemini tools; real-person sign-in and MCP belong to the wider architecture/local flow. The model proposes requests; the broker enforces access. Only broker-returned data and read counts are evidence. Model text remains untrusted. A/B scope checks have passed live Gemini testing; prompt override behavior is an advanced test, not a claimed live validation.</p>
+<p>The broker uses trusted session identity instead of agent or MCP identity claims. This hosted demo uses temporary sessions and manual Gemini tools; real-person sign-in and MCP belong to the wider architecture/local flow. The model proposes requests; the broker enforces access. Only broker-returned data and read counts are evidence. Model text remains untrusted. A/B scope checks have passed live Gemini testing. On 2026-10-04 the live override run returned no tool call, so it did not exercise host or broker denial.</p>
 <p>Temporary identities do not prove a real human’s identity. This is a lab, with synthetic data and bounded usage. Sessions and quotas are held in memory. A sleeping free service can take about one minute to wake.</p>
 </details>
 <section aria-labelledby="extension-title"><h2 id="extension-title">Extending this approach</h2>

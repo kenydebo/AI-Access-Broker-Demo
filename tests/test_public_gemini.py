@@ -104,11 +104,11 @@ class PublicDemoTests(unittest.TestCase):
             self.assertEqual(self.request('POST','/api/demo/start',value,self.auth)[0],400)
         self.start('A')
         self.assertEqual(self.request('POST','/api/gemini',{'scenario':'read-a','customer':'B'},self.auth)[0],400)
-        self.opener.values.append(reply('B'))
+        self.opener.values.append(reply('A'))
         status,_,body=self.request('POST','/api/gemini',{'scenario':'prompt-override'},self.auth)
         self.assertEqual(status,200);result=json.loads(body)
         self.assertEqual(result['model_outcome'],'host_request_binding_denied')
-        self.assertEqual(result['downstream_reads'],0);self.assertEqual(result['policy_context']['allowed_record'],'A')
+        self.assertEqual(result['downstream_reads'],0);self.assertEqual(result['request_context']['allowed_record'],'A');self.assertIsNone(result['policy_context'])
 
     def test_token_expiry_during_model_proposal_no_read_or_second_api_request(self):
         self.start('A');self.opener.values.append(reply('A'));original=self.opener.open
