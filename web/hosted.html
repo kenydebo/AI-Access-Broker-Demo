@@ -22,7 +22,8 @@ section pre{background:var(--canvas)}
 ol{padding-left:24px}
 li{overflow-wrap:anywhere;margin:12px 0;color:var(--charcoal)}
 #status,#gemini-status,#gemini-session{border-left:4px solid var(--burgundy);padding-left:12px}
-footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--muted);color:var(--muted);font-size:14px;line-height:1.65}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--muted);color:var(--muted);font-size:14px;line-height:1.65;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end}
+.footer-info{flex:1 1 280px}.footer-credit{margin-left:auto;text-align:right;font-size:12px;font-weight:400;color:var(--muted)}
 @media(max-width:560px){body{font-size:16px}button{width:100%}pre{font-size:13px;padding:14px}h2{font-size:23px}}
 
 .lead{font-size:19px;max-width:760px}.note{font-size:14px;color:var(--muted)}
@@ -46,7 +47,7 @@ details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summa
 .flow-note{font-size:13px;margin:16px 0 0;color:var(--muted)}
 @media(max-width:700px){.flow-main,.flow-result,.flow-branches{grid-template-columns:1fr}.flow-main,.flow-result{gap:24px}.flow-arrow{right:auto;left:50%;top:auto;bottom:-24px;transform:translateX(-50%) rotate(90deg)}.flow-decision{margin:20px 0}.flow-branches{gap:24px}.flow strong{font-size:16px}}
 </style><main>
-<p class="tag">Blaecwood · AI access broker lab</p>
+<p class="tag">AI Access Broker · Personal project by Kehinde Bade</p>
 <h1>A request is not permission.</h1>
 <figure class="flow" aria-labelledby="flow-title">
 <figcaption id="flow-title">How access is enforced in this demo</figcaption>
@@ -98,5 +99,5 @@ __GEMINI_CONTROLS__
 <p>Routine, low-risk actions stay automatic. Meaningful risk or exception thresholds trigger approval for an exact action, scope and time window, helping avoid approval fatigue.</p>
 <p class="note">This read-only demo does not implement writes, approval workflows or durable enterprise audit logging.</p>
 </section>
-<footer>Author: Kehinde Bade. Demo identities and synthetic data. <a href="https://github.com/kenydebo/AI-Access-Broker-Demo/blob/main/docs/GEMINI_DEMO.md" target="_blank" rel="noopener noreferrer">Technical notes</a></footer>
+<footer><span class="footer-info">Author: Kehinde Bade. Demo identities and synthetic data. <a href="https://github.com/kenydebo/AI-Access-Broker-Demo/blob/main/docs/GEMINI_DEMO.md" target="_blank" rel="noopener noreferrer">Technical notes</a></span><small class="footer-credit">Blaecwood</small></footer>
 </main><script nonce="__NONCE__">const button=document.getElementById('run'),status=document.getElementById('status'),result=document.getElementById('result');button.onclick=async()=>{button.disabled=true;status.textContent='Checking the scripted request…';result.textContent='';try{const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-CSRF':'__NONCE__'},body:JSON.stringify({scenario:document.getElementById('scenario').value})});const data=await response.json();result.textContent=JSON.stringify(data,null,2);status.textContent=response.ok?(data.decision==='allow'?'Allowed. One permitted synthetic read.':data.decision==='replay_denied_after_one_read'?'Replay blocked. The first read succeeded; the second attempt made no read.':'Blocked. No synthetic data was read.'):data.error;}catch(error){status.textContent='Request unavailable. Reload and try again.';}finally{button.disabled=false;}};</script></html>
