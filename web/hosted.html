@@ -65,7 +65,7 @@ details{margin-top:20px;border-top:1px solid var(--muted);padding-top:16px}summa
 </ol></div>
 <div><h3>Denied</h3><div class="flow-blocked"><strong>No data returned</strong><small>The read does not execute.</small></div></div>
 </div>
-<p class="flow-note">Any denial at issuance or redemption prevents the read. Session tokens and action grants stay server-side; credentials and grants are never placed in model prompts.</p>
+<p class="flow-note">Any denial at issuance or redemption prevents the read. Session scope and action grants are managed by the broker. Credentials and grants are never placed in model prompts.</p>
 </figure>
 
 <p class="lead">Every agent request should be tied to the user who started it. The broker validates the session token, checks that user’s permitted scope against policy, and issues short-lived permission for the specific action. The agent cannot widen access by claiming another identity or scope.</p>
