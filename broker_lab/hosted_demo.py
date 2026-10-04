@@ -129,30 +129,40 @@ class Sessions:
                 raise Denied('Demo token expired or unknown')
             return dict(session['demo_context'])
 
-    def begin(self, cookie, csrf, model=False, demo_required=False):
+    def begin(self, cookie, csrf, model=False, demo_required=False, explain=False):
+        def result(status, session=None, reason=None):
+            return (status, session, reason) if explain else (status, session)
         self.cleanup()
         with self.lock:
             session = self.items.get(cookie)
-            if session is None or not hmac.compare_digest(session['csrf'], csrf):
-                return 403, None
+            if session is None:
+                return result(403, reason='session_unavailable')
+            if not hmac.compare_digest(session['csrf'], csrf):
+                return result(403, reason='page_out_of_sync')
             now = self.clock()
             if demo_required and (session['demo_context'] is None or session['demo_context']['expires'] <= now or session['demo_context']['scope'] not in ('A', 'B')):
-                return 409, None
+                return result(409, reason='demo_not_started' if session['demo_context'] is None else 'demo_expired')
             session['runs'] = [stamp for stamp in session['runs'] if stamp > now-60]
             session['model_runs'] = [stamp for stamp in session['model_runs'] if stamp > now-60]
-            if model and (len(session['model_runs']) >= 3 or session['model_total'] >= 4):
-                return 429, None
-            if session['busy'] or len(session['runs']) >= 12 or len(self.runs) >= 60:
-                return 429, None
+            if model and session['model_total'] >= 4:
+                return result(429, reason='visitor_budget_exhausted')
+            if model and len(session['model_runs']) >= 3:
+                return result(429, reason='model_rate_limited')
+            if session['busy']:
+                return result(429, reason='session_busy')
+            if len(session['runs']) >= 12:
+                return result(429, reason='visitor_rate_limited')
+            if len(self.runs) >= 60:
+                return result(429, reason='service_rate_limited')
             if not self.execution.acquire(blocking=False):
-                return 503, None
+                return result(503, reason='demo_busy')
             if model:
                 session['model_runs'].append(now)
                 session['model_total'] += 1
             session['busy'] = True
             session['runs'].append(now)
             self.runs.append(now)
-            return 200, session
+            return result(200, session)
 
     def finish(self, session):
         with self.lock:
@@ -308,9 +318,21 @@ def create_server(host, port, origin, sessions=None, runner=run_scenario, secure
                 if len(tokens) != 1 or len(tokens[0]) > 128:
                     self.reply(403, b'{"error":"valid visitor session required"}')
                     return
-                status, session = sessions.begin(self.cookie(), tokens[0], model=model_request, demo_required=model_request and public_demo)
+                status, session, reason = sessions.begin(self.cookie(), tokens[0], model=model_request, demo_required=model_request and public_demo, explain=True)
                 if session is None:
-                    self.reply(status, b'{"error":"session unavailable or demo busy; reload or retry later"}')
+                    messages = {
+                        'session_unavailable': 'Session unavailable or expired. Reload this page, then start a demo session.',
+                        'page_out_of_sync': 'This page is out of sync with its session. Reload it before continuing; another tab may have changed the session.',
+                        'demo_not_started': 'Start a temporary demo session before requesting access.',
+                        'demo_expired': 'The demo task session expired. Start a new demo session.',
+                        'visitor_budget_exhausted': 'This visitor session has used its four model runs. Starting another task does not reset that limit. Wait for the visitor session to expire.',
+                        'model_rate_limited': 'Three model runs per minute are allowed. Wait at least 60 seconds before retrying.',
+                        'session_busy': 'A request is already running for this session. Wait for it to finish.',
+                        'visitor_rate_limited': 'This session has reached its request rate limit. Wait at least 60 seconds before retrying.',
+                        'service_rate_limited': 'The demo has reached its shared request rate limit. Wait at least 60 seconds before retrying.',
+                        'demo_busy': 'The demo is processing another request. Wait and retry after it finishes.'}
+                    self.reply(status, json.dumps({'error': messages[reason], 'reason_code': reason,
+                        'model_api_attempts': 0, 'events': [{'stage': 'request_admission', 'result': 'stopped', 'reason': reason}]}).encode())
                     return
                 try:
                     if start_request:
